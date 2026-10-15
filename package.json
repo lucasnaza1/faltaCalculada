@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
+    "date-fns": "^4.4.0",
+    "date-holidays": "^3.37.0",
+    "lucide-react": "^1.57.0",
+    "motion": "^14.2.0",
+    "react-day-picker": "^10.0.2",
+    "react-hook-form": "^7.90.0",
+    "zod": "^4.6.7"
+  }
+}
