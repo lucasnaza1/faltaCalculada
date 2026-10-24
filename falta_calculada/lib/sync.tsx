@@ -33,6 +33,8 @@ interface PartnerInfo {
 interface SyncState {
   session: Session | null;
   ready: boolean;
+  /** false quando as env vars do Supabase não existem (dev sem sync) */
+  configured: boolean;
   status: SyncStatus;
   partner: PartnerInfo | null;
   partnerData: AppData | null;
@@ -240,6 +242,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     () => ({
       session,
       ready,
+      configured: !!supabase,
       status,
       partner,
       partnerData,
@@ -252,6 +255,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     [
       session,
       ready,
+      supabase,
       status,
       partner,
       partnerData,

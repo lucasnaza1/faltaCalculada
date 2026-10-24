@@ -2,20 +2,26 @@
 
 /** Login / cadastro — e-mail + senha (Supabase Auth). */
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, Loader2 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
+import { useSync } from "@/lib/sync";
 
 export default function EntrarPage() {
   const router = useRouter();
+  const { session, ready } = useSync();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // já logado → vai direto para a home
+  useEffect(() => {
+    if (ready && session) router.replace("/");
+  }, [ready, session, router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -145,13 +151,6 @@ export default function EntrarPage() {
           ? "Não tem conta? Criar agora"
           : "Já tem conta? Entrar"}
       </button>
-
-      <Link
-        href="/"
-        className="text-center text-sm text-muted hover:text-foreground"
-      >
-        Continuar sem sync (dados só neste aparelho)
-      </Link>
     </div>
   );
 }

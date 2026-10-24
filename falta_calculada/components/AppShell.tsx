@@ -1,46 +1,58 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
-import { Heart } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import { StoreProvider } from "@/lib/store";
 import { SyncProvider, useSync } from "@/lib/sync";
 import { BottomNav } from "./BottomNav";
 import { PartnerSwitch } from "./PartnerSwitch";
 
-const emptySubscribe = () => () => {};
-
-function useMounted(): boolean {
-  return useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  );
-}
-
-/** Guarda de sessão: enquanto não sabemos se há sessão, não decide nada.
- * Sem sessão → mantém o app funcionando local e mostra o CTA de login. */
+/** Gate de autenticação obrigatório.
+ * - Aguardando sessão → spinner (não pisca conteúdo).
+ * - Sem sessão → redireciona para /entrar (exceto na própria /entrar).
+ * - Sessão persistida em cookie/localStorage: loga uma vez só.
+ * - Supabase não configurado (dev) → bloqueia com aviso em vez de loop. */
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { session, ready, partner, partnerData } = useSync();
-  const mounted = useMounted();
+  const { session, ready, configured, partner, partnerData } = useSync();
+  const pathname = usePathname();
   const router = useRouter();
 
-  const showSwitch = mounted && session && partner && partnerData;
+  const isAuthPage = pathname === "/entrar";
+
+  useEffect(() => {
+    if (ready && configured && !session && !isAuthPage) {
+      router.replace("/entrar");
+    }
+  }, [ready, configured, session, isAuthPage, router]);
+
+  // aguardando verificação de sessão
+  if (!ready && configured) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" aria-label="Carregando" />
+      </div>
+    );
+  }
+
+  // sem env vars do Supabase: ambiente de dev sem sync
+  if (ready && !configured) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4 text-center">
+        <p className="text-sm text-muted">
+          Sync não configurado — defina NEXT_PUBLIC_SUPABASE_URL e
+          NEXT_PUBLIC_SUPABASE_ANON_KEY e reinicie o servidor.
+        </p>
+      </div>
+    );
+  }
+
+  const showSwitch = session && partner && partnerData && !isAuthPage;
 
   return (
     <>
       {showSwitch && <PartnerSwitch />}
       {children}
-      {mounted && ready && !session && (
-        <button
-          type="button"
-          onClick={() => router.push("/entrar")}
-          className="fixed inset-x-0 bottom-24 z-30 mx-auto flex w-fit items-center gap-2 rounded-full border border-primary/40 bg-[#16161a]/95 px-4 py-2.5 text-sm font-medium text-primary shadow-lg backdrop-blur transition-colors hover:bg-primary/10"
-        >
-          <Heart className="h-4 w-4" aria-hidden />
-          Ativar sync com o parceiro(a)
-        </button>
-      )}
     </>
   );
 }

@@ -86,21 +86,9 @@ export default function ContaPage() {
     }
   }
 
+  // gate do AuthGate garante sessão; seguro apenas aguardar
   if (!session) {
-    return (
-      <div className="flex flex-col gap-4 pt-10 text-center">
-        <Heart className="mx-auto h-8 w-8 text-primary" aria-hidden />
-        <p className="text-sm text-muted">
-          Você não está conectado. Os dados ficam somente neste aparelho.
-        </p>
-        <a
-          href="/entrar"
-          className="mx-auto rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-soft hover:text-black"
-        >
-          Entrar / criar conta
-        </a>
-      </div>
-    );
+    return <p className="pt-10 text-center text-muted">Carregando…</p>;
   }
 
   return (
