@@ -125,6 +125,19 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
+      /** peso do documento: nº de registros reais (faltas + eventos + matérias) */
+      const docWeight = (d: AppData | null | undefined): number => {
+        if (!d?.semesters?.length) return -1;
+        let w = 0;
+        for (const sem of d.semesters) {
+          w += sem.subjects.length;
+          for (const sub of sem.subjects) w += sub.absences.length;
+          w += sem.events.length;
+        }
+        return w;
+      };
+
+      const localDoc = getSnapshot();
       const localHasData = (() => {
         try {
           const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -134,14 +147,20 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         }
       })();
 
-      if (remote?.data) {
-        replaceData(remote.data as AppData);
+      const remoteDoc = (remote?.data as AppData) ?? null;
+      const remoteW = docWeight(remoteDoc);
+      const localW = localHasData ? docWeight(localDoc) : -1;
+
+      if (remoteDoc && remoteW >= localW) {
+        // nuvem igual ou mais completa → adota
+        replaceData(remoteDoc);
         setStatus("synced");
-      } else if (localHasData) {
-        // primeiro login: sobe o localStorage (migração, sem perder dados)
+      } else if (localHasData && localW > remoteW) {
+        // local mais completo (ex.: login em conta nova com histórico local,
+        // ou nuvem vazia/só-seed) → sobe o local
         const { error: upErr } = await supabase.from("app_data").upsert({
           user_id: s.user.id,
-          data: getSnapshot(),
+          data: localDoc,
           updated_at: new Date().toISOString(),
         });
         setStatus(upErr ? "error" : "synced");

@@ -21,8 +21,24 @@ const EVENT_TYPES: EventType[] = [
   "SCHEDULE_CHANGE",
 ];
 
+/** "FALTA" é um pseudo-tipo do formulário: registra ausência em uma matéria,
+ * não um evento de calendário. */
+type FormType = EventType | "FALTA";
+
+const TYPE_OPTIONS: Array<{ value: FormType; label: string }> = [
+  { value: "FALTA", label: "Falta" },
+  ...EVENT_TYPES.map((t) => ({ value: t as FormType, label: EVENT_LABELS[t] })),
+];
+
+const EMPTY_FORM = {
+  type: "FALTA" as FormType,
+  subjectId: "",
+  note: "",
+  classesCount: "",
+};
+
 export default function CalendarioPage() {
-  const { addEvent, removeEvent } = useStore();
+  const { addEvent, removeEvent, addAbsence, removeAbsence } = useStore();
   const { data, readOnly } = useAppData();
   const today = useToday();
   const activeSemester =
@@ -43,11 +59,8 @@ export default function CalendarioPage() {
   const cursor = cursorOverride ?? defaultCursor;
   const [selected, setSelected] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState<{
-    type: EventType;
-    subjectId: string;
-    note: string;
-  }>({ type: "HOLIDAY", subjectId: "", note: "" });
+
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const monthDays = useMemo(() => {
     const first = new Date(cursor.year, cursor.month, 1);
@@ -79,6 +92,28 @@ export default function CalendarioPage() {
     return map;
   }, [activeSemester]);
 
+  /** faltas do dia: matéria + ausência (para listar e marcar no calendário) */
+  const absencesByDate = useMemo(() => {
+    const map = new Map<
+      string,
+      Array<{ subjectId: string; subjectName: string; absenceId: string; classesCount: number; justified: boolean }>
+    >();
+    for (const subject of activeSemester?.subjects ?? []) {
+      for (const abs of subject.absences) {
+        const list = map.get(abs.date) ?? [];
+        list.push({
+          subjectId: subject.id,
+          subjectName: subject.name,
+          absenceId: abs.id,
+          classesCount: abs.classesCount,
+          justified: abs.justified,
+        });
+        map.set(abs.date, list);
+      }
+    }
+    return map;
+  }, [activeSemester]);
+
   if (!data || !activeSemester) {
     return <p className="pt-10 text-center text-muted">Carregando…</p>;
   }
@@ -99,6 +134,29 @@ export default function CalendarioPage() {
 
   const selectedEvents = selected ? (eventsByDate.get(selected) ?? []) : [];
   const selectedHoliday = selected ? (holidays.get(selected) ?? null) : null;
+  const selectedAbsences = selected ? (absencesByDate.get(selected) ?? []) : [];
+
+  function submitForm(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected) return;
+    if (form.type === "FALTA") {
+      if (!form.subjectId) return;
+      const count =
+        form.classesCount.trim() === ""
+          ? undefined
+          : Number(form.classesCount);
+      if (count !== undefined && (Number.isNaN(count) || count < 1)) return;
+      addAbsence(form.subjectId, selected, count ?? 1, false, form.note.trim() || undefined);
+    } else {
+      addEvent({
+        type: form.type,
+        date: selected,
+        subjectId: form.subjectId || null,
+        note: form.note.trim() || undefined,
+      });
+    }
+    setModalOpen(false);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -147,6 +205,7 @@ export default function CalendarioPage() {
             ) : null;
           const isHoliday = holidays.has(date);
           const hasEvents = eventsByDate.has(date);
+          const hasAbsences = absencesByDate.has(date);
           const inSemester =
             activeSemester.startDate <= date && date <= activeSemester.endDate;
           return (
@@ -155,21 +214,32 @@ export default function CalendarioPage() {
               type="button"
               onClick={() => setSelected(date)}
               aria-pressed={isSelected}
-              aria-label={isHoliday ? `${date}, feriado` : date}
+              aria-label={
+                hasAbsences
+                  ? `${date}, dia com faltas`
+                  : isHoliday
+                    ? `${date}, feriado`
+                    : date
+              }
               className={`flex aspect-square flex-col items-center justify-center rounded-xl text-sm transition-colors ${
                 isSelected
                   ? "bg-primary text-white"
-                  : isHoliday
-                    ? "bg-danger/15 text-danger"
-                    : hasEvents
-                      ? "bg-warning/15 text-warning"
-                      : inSemester
-                        ? "text-foreground hover:bg-white/5"
-                        : "text-muted/40"
+                  : hasAbsences
+                    ? "bg-danger/20 text-danger"
+                    : isHoliday
+                      ? "bg-danger/15 text-danger"
+                      : hasEvents
+                        ? "bg-warning/15 text-warning"
+                        : inSemester
+                          ? "text-foreground hover:bg-white/5"
+                          : "text-muted/40"
               }`}
             >
               {Number(date.slice(8, 10))}
               {isTodayMark}
+              {hasAbsences && (
+                <span className="mt-0.5 h-1 w-1 rounded-full bg-danger" aria-hidden />
+              )}
             </button>
           );
         })}
@@ -178,6 +248,9 @@ export default function CalendarioPage() {
       <div className="flex flex-wrap gap-3 text-xs text-muted">
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm bg-danger/60" aria-hidden /> Feriado
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-danger" aria-hidden /> Falta
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm bg-warning/60" aria-hidden /> Alteração
@@ -203,13 +276,13 @@ export default function CalendarioPage() {
             <button
               type="button"
               onClick={() => {
-                setForm({ type: "HOLIDAY", subjectId: "", note: "" });
+                setForm(EMPTY_FORM);
                 setModalOpen(true);
               }}
               disabled={readOnly}
               className="flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-soft hover:text-black disabled:opacity-50"
             >
-              <Plus className="h-4 w-4" aria-hidden /> Alteração
+              <Plus className="h-4 w-4" aria-hidden /> Registrar
             </button>
           </div>
 
@@ -217,9 +290,37 @@ export default function CalendarioPage() {
             <p className="text-sm text-danger">{selectedHoliday} (feriado nacional)</p>
           )}
 
-          {selectedEvents.length === 0 && !selectedHoliday && (
-            <p className="text-sm text-muted">Nenhuma alteração neste dia.</p>
+          {selectedAbsences.length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {selectedAbsences.map((abs) => (
+                <li
+                  key={abs.absenceId}
+                  className="flex items-center justify-between gap-2 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger"
+                >
+                  <span>
+                    Falta · {abs.subjectName} — {abs.classesCount}
+                    {abs.classesCount === 1 ? " horário" : " horários"}
+                    {abs.justified ? " (justificada)" : ""}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeAbsence(abs.subjectId, abs.absenceId)}
+                    disabled={readOnly}
+                    aria-label={`Remover falta em ${abs.subjectName}`}
+                    className="text-xs text-muted underline transition-colors hover:text-danger disabled:opacity-30"
+                  >
+                    remover
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
+
+          {selectedEvents.length === 0 &&
+            !selectedHoliday &&
+            selectedAbsences.length === 0 && (
+              <p className="text-sm text-muted">Nada registrado neste dia.</p>
+            )}
 
           <ul className="flex flex-col gap-2">
             {selectedEvents.map((ev) => (
@@ -248,46 +349,44 @@ export default function CalendarioPage() {
         </section>
       )}
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Nova alteração">
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!selected) return;
-            addEvent({
-              type: form.type,
-              date: selected,
-              subjectId: form.subjectId || null,
-              note: form.note.trim() || undefined,
-            });
-            setModalOpen(false);
-          }}
-        >
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={form.type === "FALTA" ? "Registrar falta" : "Nova alteração"}
+      >
+        <form className="flex flex-col gap-4" onSubmit={submitForm}>
           <label className="flex flex-col gap-1.5 text-sm">
             Tipo
             <select
               value={form.type}
               onChange={(e) =>
-                setForm((f) => ({ ...f, type: e.target.value as EventType }))
+                setForm((f) => ({ ...f, type: e.target.value as FormType }))
               }
               className="rounded-xl border border-white/10 bg-surface-raised px-3 py-2.5"
             >
-              {EVENT_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {EVENT_LABELS[t]}
+              {TYPE_OPTIONS.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
                 </option>
               ))}
             </select>
           </label>
 
           <label className="flex flex-col gap-1.5 text-sm">
-            Matéria (opcional — vazio afeta todas)
+            {form.type === "FALTA" ? "Matéria" : "Matéria (opcional — vazio afeta todas)"}
             <select
               value={form.subjectId}
               onChange={(e) => setForm((f) => ({ ...f, subjectId: e.target.value }))}
+              required={form.type === "FALTA"}
               className="rounded-xl border border-white/10 bg-surface-raised px-3 py-2.5"
             >
-              <option value="">Todas as matérias</option>
+              {form.type === "FALTA" ? (
+                <option value="" disabled>
+                  Selecione a matéria
+                </option>
+              ) : (
+                <option value="">Todas as matérias</option>
+              )}
               {activeSemester.subjects.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -296,13 +395,34 @@ export default function CalendarioPage() {
             </select>
           </label>
 
+          {form.type === "FALTA" && (
+            <label className="flex flex-col gap-1.5 text-sm">
+              Horários (opcional — vazio = 1)
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={form.classesCount}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, classesCount: e.target.value }))
+                }
+                placeholder="Ex.: 2"
+                className="rounded-xl border border-white/10 bg-surface-raised px-3 py-2.5 placeholder:text-muted/60"
+              />
+            </label>
+          )}
+
           <label className="flex flex-col gap-1.5 text-sm">
             Observação (opcional)
             <input
               type="text"
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Ex.: ponte, semana acadêmica…"
+              placeholder={
+                form.type === "FALTA"
+                  ? "Ex.: atestado, médico…"
+                  : "Ex.: ponte, semana acadêmica…"
+              }
               className="rounded-xl border border-white/10 bg-surface-raised px-3 py-2.5 placeholder:text-muted/60"
             />
           </label>

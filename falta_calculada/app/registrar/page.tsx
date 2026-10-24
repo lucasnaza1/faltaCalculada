@@ -63,26 +63,37 @@ export default function RegistrarPage() {
         <p className="mt-1 text-sm text-muted">Marque os horários que faltou</p>
       </header>
 
-      <div className="flex items-center justify-between gap-2" role="group" aria-label="Escolher data">
-        <button
-          type="button"
-          onClick={() => setDate(addDaysKey(date, -1))}
-          aria-label="Dia anterior"
-          className="rounded-xl border border-white/10 bg-surface p-2.5 text-muted transition-colors hover:text-foreground"
-        >
-          <ChevronLeft className="h-5 w-5" aria-hidden />
-        </button>
-        <p className="text-center text-sm font-medium capitalize-first">
-          {fmtLongDate(date)}
-        </p>
-        <button
-          type="button"
-          onClick={() => setDate(addDaysKey(date, 1))}
-          aria-label="Próximo dia"
-          className="rounded-xl border border-white/10 bg-surface p-2.5 text-muted transition-colors hover:text-foreground"
-        >
-          <ChevronRight className="h-5 w-5" aria-hidden />
-        </button>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2" role="group" aria-label="Escolher data">
+          <button
+            type="button"
+            onClick={() => setDate(addDaysKey(date, -1))}
+            aria-label="Dia anterior"
+            className="rounded-xl border border-white/10 bg-surface p-2.5 text-muted transition-colors hover:text-foreground"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden />
+          </button>
+          <p className="text-center text-sm font-medium capitalize-first">
+            {fmtLongDate(date)}
+          </p>
+          <button
+            type="button"
+            onClick={() => setDate(addDaysKey(date, 1))}
+            aria-label="Próximo dia"
+            className="rounded-xl border border-white/10 bg-surface p-2.5 text-muted transition-colors hover:text-foreground"
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+        <label className="flex items-center justify-center gap-2 text-xs text-muted">
+          Ir para data
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => e.target.value && setDate(e.target.value)}
+            className="rounded-xl border border-white/10 bg-surface-raised px-3 py-1.5 text-sm text-foreground"
+          />
+        </label>
       </div>
 
       {feedback && (
