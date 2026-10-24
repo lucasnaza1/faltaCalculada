@@ -3,7 +3,7 @@
 /** Conta: vínculo do casal (gerar/aceitar código) + logout. */
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Heart, Loader2, LogOut, X } from "lucide-react";
+import { Check, Copy, Heart, Loader2, LogOut } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { useSync } from "@/lib/sync";
 
@@ -188,11 +188,7 @@ export default function ContaPage() {
                   disabled={acceptBusy || codeInput.length < 6}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-soft hover:text-black disabled:opacity-60"
                 >
-                  {acceptBusy ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  ) : (
-                    <X className="hidden" aria-hidden />
-                  )}
+                  {acceptBusy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
                   Vincular
                 </button>
               </form>

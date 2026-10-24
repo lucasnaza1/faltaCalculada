@@ -20,7 +20,7 @@ import {
 } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { AppData } from "./types";
-import { getSnapshot, replaceData, subscribe, subscribeMutations } from "./store";
+import { getSnapshot, replaceData, subscribeMutations } from "./store";
 import { getSupabase } from "./supabase";
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "error";
@@ -274,5 +274,3 @@ export function useSync(): SyncState {
   if (!ctx) throw new Error("useSync deve ser usado dentro de <SyncProvider>");
   return ctx;
 }
-
-export { subscribe as subscribeStore, getSnapshot };

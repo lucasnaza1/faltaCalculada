@@ -35,7 +35,7 @@ export default function EntrarPage() {
     }
     try {
       if (mode === "signup") {
-        const { error: err } = await supabase.auth.signUp({
+        const { data: signUpData, error: err } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: { data: { display_name: name.trim() } },
@@ -48,6 +48,13 @@ export default function EntrarPage() {
             user_id: sess.session.user.id,
             display_name: name.trim() || email.split("@")[0],
           });
+        } else if (signUpData.user) {
+          // Supabase exigiu confirmação de e-mail (não vem sessão)
+          setError(
+            "Conta criada! Confirme pelo e-mail que enviamos e depois faça login.",
+          );
+          setMode("login");
+          return;
         }
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({
