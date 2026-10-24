@@ -28,11 +28,6 @@ export default function EntrarPage() {
     setError(null);
     setBusy(true);
     const supabase = getSupabase();
-    if (!supabase) {
-      setBusy(false);
-      setError("Sync não configurado neste ambiente (faltam as variáveis do Supabase).");
-      return;
-    }
     try {
       if (mode === "signup") {
         const { data: signUpData, error: err } = await supabase.auth.signUp({

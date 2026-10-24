@@ -30,7 +30,7 @@ export default function ContaPage() {
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
-    if (!session || !supabase) return;
+    if (!session) return;
     // carrega convite ativo (não usado, não expirado)
     void (async () => {
       const { data } = await supabase
@@ -47,7 +47,7 @@ export default function ContaPage() {
   }, [session, supabase]);
 
   const generateInvite = useCallback(async () => {
-    if (!session || !supabase) return;
+    if (!session) return;
     setInviteBusy(true);
     try {
       const code = randomCode();
@@ -63,7 +63,7 @@ export default function ContaPage() {
 
   async function acceptInvite(e: React.FormEvent) {
     e.preventDefault();
-    if (!session || !supabase) return;
+    if (!session) return;
     setAcceptBusy(true);
     setAcceptError(null);
     try {
