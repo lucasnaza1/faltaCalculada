@@ -7,6 +7,7 @@ import { SubjectCard } from "@/components/SubjectCard";
 import { sortByRisk, subjectStats } from "@/lib/calc";
 import { WEEKDAY_SHORT } from "@/lib/dates";
 import { uid, useStore } from "@/lib/store";
+import { useAppData } from "@/lib/useAppData";
 import { useToday } from "@/lib/useToday";
 import type { ScheduleSlot, Subject } from "@/lib/types";
 
@@ -36,12 +37,17 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function MateriasPage() {
-  const { data, activeSemester, upsertSubject, deleteSubject } = useStore();
+  const { upsertSubject, deleteSubject } = useStore();
+  const { data, readOnly } = useAppData();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Subject | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const today = useToday();
+
+  const activeSemester =
+    data?.semesters.find((s) => s.id === data.activeSemesterId) ??
+    data?.semesters[0];
 
   if (!data || !activeSemester || !today) {
     return <p className="pt-10 text-center text-muted">Carregando…</p>;
@@ -117,7 +123,8 @@ export default function MateriasPage() {
         <button
           type="button"
           onClick={openNew}
-          className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-soft hover:text-black"
+          disabled={readOnly}
+          className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-soft hover:text-black disabled:opacity-50"
         >
           <Plus className="h-4 w-4" aria-hidden /> Nova
         </button>
@@ -134,7 +141,8 @@ export default function MateriasPage() {
               <button
                 type="button"
                 onClick={() => openEdit(s.subject)}
-                className="w-full text-left"
+                disabled={readOnly}
+                className="w-full text-left disabled:cursor-default"
                 aria-label={`Editar ${s.subject.name}`}
               >
                 <SubjectCard stats={s} />
@@ -156,8 +164,9 @@ export default function MateriasPage() {
                       deleteSubject(s.subject.id);
                     }
                   }}
+                  disabled={readOnly}
                   aria-label={`Excluir ${s.subject.name}`}
-                  className="rounded-lg p-1.5 text-muted transition-colors hover:bg-danger/10 hover:text-danger"
+                  className="rounded-lg p-1.5 text-muted transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-30"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                 </button>

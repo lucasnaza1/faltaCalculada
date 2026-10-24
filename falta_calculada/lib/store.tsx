@@ -33,6 +33,7 @@ function getSnapshot(): AppData {
   if (cache === null) cache = readStorage();
   return cache;
 }
+export { getSnapshot };
 
 /** Snapshot do servidor memoizado — referência estável evita re-render infinito
  * durante a hidratação (cliente troca para getSnapshot logo em seguida). */
@@ -42,8 +43,9 @@ function getServerSnapshot(): AppData {
   if (serverCache === null) serverCache = seedData();
   return serverCache;
 }
+export { getServerSnapshot };
 
-function persist(next: AppData) {
+function persist(next: AppData, opts?: { fromSync?: boolean }) {
   cache = next;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -51,12 +53,17 @@ function persist(next: AppData) {
     // quota cheia / modo privado: segue funcionando em memória
   }
   for (const l of listeners) l();
+  if (!opts?.fromSync) for (const l of mutationListeners) l();
 }
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
+export { subscribe };
+
+/** Notificado a cada mutação local (o SyncProvider faz o push). */
+const mutationListeners = new Set<() => void>();
 
 export function uid(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -84,6 +91,19 @@ interface Store {
   removeEvent: (eventId: string) => void;
   updateSettings: (patch: Partial<AppData["settings"]>) => void;
   resetToSeed: () => void;
+}
+
+/** Substitui o documento local por um vindo do servidor (pull). */
+export function replaceData(next: AppData) {
+  persist(next, { fromSync: true });
+}
+
+/** Assina mutações locais (para o SyncProvider fazer push debounced). */
+export function subscribeMutations(listener: () => void): () => void {
+  mutationListeners.add(listener);
+  return () => {
+    mutationListeners.delete(listener);
+  };
 }
 
 const StoreContext = createContext<Store | null>(null);

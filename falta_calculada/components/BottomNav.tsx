@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, GraduationCap, Home, PlusCircle } from "lucide-react";
+import { CalendarDays, GraduationCap, Home, PlusCircle, User } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Início", icon: Home },
   { href: "/registrar", label: "Registrar", icon: PlusCircle },
   { href: "/calendario", label: "Calendário", icon: CalendarDays },
   { href: "/materias", label: "Matérias", icon: GraduationCap },
+  { href: "/conta", label: "Conta", icon: User },
 ] as const;
 
 export function BottomNav() {

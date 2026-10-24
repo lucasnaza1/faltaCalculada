@@ -13,17 +13,23 @@ import {
   fmtLongDate,
   hoursBetween,
 } from "@/lib/dates";
+import { useAppData } from "@/lib/useAppData";
 import { useStore } from "@/lib/store";
 import { useToday } from "@/lib/useToday";
 
 export default function RegistrarPage() {
-  const { data, activeSemester, addAbsence, removeAbsence } = useStore();
+  const { data, readOnly } = useAppData();
+  const { addAbsence, removeAbsence } = useStore();
   const today = useToday();
   const [dateOverride, setDateOverride] = useState<string | null>(null);
   // até montar, usa a data de referência do seed; depois, hoje
   const date = dateOverride ?? today ?? "2026-10-14";
   const setDate = setDateOverride;
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  const activeSemester =
+    data?.semesters.find((s) => s.id === data.activeSemesterId) ??
+    data?.semesters[0];
 
   const dayInfo = useMemo(() => {
     if (!data || !activeSemester) return null;
@@ -43,6 +49,7 @@ export default function RegistrarPage() {
   }
 
   function register(subjectId: string, classesCount: number) {
+    if (readOnly) return;
     addAbsence(subjectId, date, classesCount);
     const subject = activeSemester!.subjects.find((s) => s.id === subjectId);
     setFeedback(`Falta registrada em ${subject?.name} ✓`);
@@ -128,6 +135,7 @@ export default function RegistrarPage() {
                       <button
                         key={slot.id}
                         type="button"
+                        disabled={readOnly}
                         onClick={() =>
                           marked
                             ? removeAbsence(
@@ -153,11 +161,12 @@ export default function RegistrarPage() {
                   })}
                   <button
                     type="button"
+                    disabled={readOnly}
                     onClick={() => {
                       const total = slots.reduce((s, e) => s + e.hours, 0);
                       register(subject.id, total);
                     }}
-                    className="rounded-xl border border-danger/40 bg-danger/10 px-3 py-2 text-sm font-semibold text-danger transition-colors hover:bg-danger/20"
+                    className="rounded-xl border border-danger/40 bg-danger/10 px-3 py-2 text-sm font-semibold text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
                   >
                     Faltei o dia todo
                   </button>

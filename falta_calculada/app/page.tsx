@@ -5,20 +5,24 @@ import { AlertTriangle, CalendarCheck, ChevronRight } from "lucide-react";
 import { SubjectCard } from "@/components/SubjectCard";
 import { dayClasses, daySlots, semesterHolidays, sortByRisk, subjectStats } from "@/lib/calc";
 import { fmtLongDate } from "@/lib/dates";
-import { useStore } from "@/lib/store";
+import { useAppData } from "@/lib/useAppData";
 import { useToday } from "@/lib/useToday";
 
 export default function HomePage() {
-  const { data, activeSemester } = useStore();
+  const { data, readOnly } = useAppData();
   const today = useToday();
 
-  if (!data || !activeSemester || !today) {
+  if (!data || !today) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
         <p className="text-lg font-semibold">Carregando…</p>
       </div>
     );
   }
+
+  const activeSemester =
+    data.semesters.find((s) => s.id === data.activeSemesterId) ??
+    data.semesters[0];
 
   const holidays = semesterHolidays(activeSemester);
   const stats = activeSemester.subjects.map((s) =>
@@ -72,12 +76,14 @@ export default function HomePage() {
           <h2 id="aulas-hoje" className="text-sm font-semibold uppercase tracking-wide text-muted">
             Aulas de hoje
           </h2>
-          <Link
-            href="/registrar"
-            className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-soft"
-          >
-            Registrar falta <ChevronRight className="h-4 w-4" aria-hidden />
-          </Link>
+          {!readOnly && (
+            <Link
+              href="/registrar"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-soft"
+            >
+              Registrar falta <ChevronRight className="h-4 w-4" aria-hidden />
+            </Link>
+          )}
         </div>
 
         {holidays.has(today) ? (
@@ -94,7 +100,9 @@ export default function HomePage() {
             {todaySubjects.map(({ subject, slots }) => (
               <li key={subject.id}>
                 <Link
-                  href={`/registrar?data=${today}`}
+                  href={readOnly ? "#" : `/registrar?data=${today}`}
+                  aria-disabled={readOnly}
+                  onClick={(e) => readOnly && e.preventDefault()}
                   className="flex items-center justify-between rounded-2xl border border-white/10 bg-surface p-4 transition-colors hover:border-primary/40"
                 >
                   <div className="flex items-center gap-3">

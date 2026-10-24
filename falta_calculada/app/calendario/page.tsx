@@ -6,6 +6,7 @@ import { Modal } from "@/components/Modal";
 import { semesterHolidays } from "@/lib/calc";
 import { monthLabel, parseDateKey, toDateKey } from "@/lib/dates";
 import { useStore } from "@/lib/store";
+import { useAppData } from "@/lib/useAppData";
 import { useToday } from "@/lib/useToday";
 import { EVENT_LABELS, type EventType } from "@/lib/types";
 
@@ -21,8 +22,12 @@ const EVENT_TYPES: EventType[] = [
 ];
 
 export default function CalendarioPage() {
-  const { data, activeSemester, addEvent, removeEvent } = useStore();
+  const { addEvent, removeEvent } = useStore();
+  const { data, readOnly } = useAppData();
   const today = useToday();
+  const activeSemester =
+    data?.semesters.find((s) => s.id === data.activeSemesterId) ??
+    data?.semesters[0];
   // cursor do mês derivado de "hoje" no cliente; usuário navega a partir dele
   const [cursorOverride, setCursorOverride] = useState<{
     year: number;
@@ -201,7 +206,8 @@ export default function CalendarioPage() {
                 setForm({ type: "HOLIDAY", subjectId: "", note: "" });
                 setModalOpen(true);
               }}
-              className="flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-soft hover:text-black"
+              disabled={readOnly}
+              className="flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-soft hover:text-black disabled:opacity-50"
             >
               <Plus className="h-4 w-4" aria-hidden /> Alteração
             </button>
@@ -230,8 +236,9 @@ export default function CalendarioPage() {
                 <button
                   type="button"
                   onClick={() => removeEvent(ev.id)}
+                  disabled={readOnly}
                   aria-label={`Remover ${EVENT_LABELS[ev.type]}`}
-                  className="text-xs text-muted underline transition-colors hover:text-danger"
+                  className="text-xs text-muted underline transition-colors hover:text-danger disabled:opacity-30"
                 >
                   remover
                 </button>
