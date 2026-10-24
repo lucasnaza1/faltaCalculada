@@ -54,7 +54,10 @@ const STORAGE_KEY = "falta-calculada:v1";
 export function SyncProvider({ children }: { children: React.ReactNode }) {
   const supabase = getSupabase();
   const [session, setSession] = useState<Session | null>(null);
-  const [ready, setReady] = useState(false);
+  // ready=true por padrão: quando o Supabase não está configurado,
+  // o app funciona local sem esperar sessão; com cliente, o efeito
+  // de sessão cuida do ciclo real (false durante o check inicial).
+  const [ready, setReady] = useState(() => !getSupabase());
   const [status, setStatus] = useState<SyncStatus>("idle");
   const [partner, setPartner] = useState<PartnerInfo | null>(null);
   const [partnerData, setPartnerData] = useState<AppData | null>(null);
@@ -74,6 +77,10 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
   // ---------------------------------------------------------------- sessão
   useEffect(() => {
+    if (!supabase) {
+      // sem env vars: app 100% local, sem sync (ready já nasce true)
+      return;
+    }
     supabase.auth
       .getSession()
       .then(({ data }) => {
@@ -90,7 +97,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   // --------------------------------------------------------- push (debounce)
   const push = useCallback(async () => {
     const s = sessionRef.current;
-    if (!s) return;
+    if (!s || !supabase) return;
     setStatus("syncing");
     const { error } = await supabase.from("app_data").upsert({
       user_id: s.user.id,
@@ -111,7 +118,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   // ------------------------------------------------------------- pull (login)
   const pull = useCallback(async () => {
     const s = sessionRef.current;
-    if (!s || pulling.current) return;
+    if (!s || !supabase || pulling.current) return;
     // se há push pendente, não sobrescreve o local com o remoto (evita perder edição)
     if (pushTimer.current) return;
     pulling.current = true;
@@ -158,7 +165,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   // --------------------------------------------------------- parceiro (poll)
   const loadPartner = useCallback(async () => {
     const s = sessionRef.current;
-    if (!s) return;
+    if (!s || !supabase) return;
     try {
       const { data: couple } = await supabase
         .from("couples")
@@ -223,7 +230,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   }, [session, pull, loadPartner]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
     setPartner(null);
     setPartnerData(null);
     setViewingPartnerState(false);
