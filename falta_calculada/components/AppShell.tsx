@@ -6,14 +6,13 @@ import { Loader2 } from "lucide-react";
 import { StoreProvider } from "@/lib/store";
 import { SyncProvider, useSync } from "@/lib/sync";
 import { BottomNav } from "./BottomNav";
-import { PartnerSwitch } from "./PartnerSwitch";
 
 /** Gate de autenticação obrigatório.
  * - Aguardando sessão → spinner (não pisca conteúdo).
  * - Sem sessão → redireciona para /entrar (exceto na própria /entrar).
  * - Sessão persistida em cookie/localStorage: loga uma vez só. */
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { session, ready, partner, partnerData } = useSync();
+  const { session, ready } = useSync();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -34,14 +33,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const showSwitch = session && partner && partnerData && !isAuthPage;
-
-  return (
-    <>
-      {showSwitch && <PartnerSwitch />}
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {

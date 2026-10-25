@@ -32,6 +32,11 @@ import { getSupabase } from "./supabase";
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "error";
 
+/** documento tem ao menos uma matéria cadastrada? */
+function hasSubjects(d: AppData | null | undefined): boolean {
+  return !!d?.semesters?.some((s) => s.subjects.length > 0);
+}
+
 interface PartnerInfo {
   userId: string;
   displayName: string;
@@ -259,33 +264,36 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     setViewingPartnerState(false);
   }, [supabase]);
 
-  const value = useMemo<SyncState>(
-    () => ({
+  const value = useMemo<SyncState>(() => {
+    // fallback: usuário sem registros próprios + parceiro com dados →
+    // exibe os dados do parceiro automaticamente (somente leitura)
+    const partnerFallback = !hasSubjects(localData) && hasSubjects(partnerData);
+
+    return {
       session,
       ready,
       status,
       partner,
       partnerData,
       sessionData: localData,
-      viewingPartner: viewingPartner && !!partnerData,
+      viewingPartner: partnerFallback || (viewingPartner && !!partnerData),
       setViewingPartner,
-      readOnly: viewingPartner && !!partnerData,
+      readOnly: partnerFallback || (viewingPartner && !!partnerData),
       refreshPartner: () => void loadPartner(),
       signOut,
-    }),
-    [
-      session,
-      ready,
-      status,
-      partner,
-      partnerData,
-      localData,
-      viewingPartner,
-      setViewingPartner,
-      loadPartner,
-      signOut,
-    ],
-  );
+    };
+  }, [
+    session,
+    ready,
+    status,
+    partner,
+    partnerData,
+    localData,
+    viewingPartner,
+    setViewingPartner,
+    loadPartner,
+    signOut,
+  ]);
 
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;
 }

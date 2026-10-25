@@ -7,6 +7,7 @@ import { Check, Copy, Heart, Loader2, LogOut, Moon, Sun } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { useSync } from "@/lib/sync";
 import { useTheme } from "@/lib/theme";
+import { PartnerSwitch } from "@/components/PartnerSwitch";
 
 function randomCode(): string {
   // sem caracteres ambíguos (0/O, 1/I/L)
@@ -139,13 +140,16 @@ export default function ConfiguracoesPage() {
         </div>
       </section>
 
+      {/* ------------------------------------------- visualização de dados */}
+      <PartnerSwitch />
+
       {/* ------------------------------------------------- vínculo do casal */}
       {partner ? (
         <div className="flex items-start gap-3 rounded-2xl border border-success/30 bg-success/10 p-4 text-sm">
           <Heart className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden />
           <p>
             Vinculado com <strong>{partner.displayName}</strong>. Alterne entre
-            os dados no topo da tela inicial.
+            os dados na seção &quot;Visualização de dados&quot; acima.
           </p>
         </div>
       ) : (
