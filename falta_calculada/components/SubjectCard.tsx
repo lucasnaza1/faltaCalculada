@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { fmtPct, riskColor, type SubjectStats } from "@/lib/calc";
 
@@ -9,7 +9,7 @@ export function SubjectCard({ stats }: { stats: SubjectStats }) {
 
   return (
     <article
-      className="rounded-2xl border border-white/10 bg-surface p-4"
+      className="rounded-2xl border border-soft bg-surface p-4"
       aria-label={subject.name}
     >
       <div className="flex items-start justify-between gap-3">

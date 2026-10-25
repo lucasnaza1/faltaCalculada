@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /** Login / cadastro — e-mail + senha (Supabase Auth). */
 

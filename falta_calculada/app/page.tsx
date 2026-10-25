@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { AlertTriangle, CalendarCheck, ChevronRight } from "lucide-react";
+import { AlertTriangle, CalendarCheck, ChevronRight, GraduationCap, PlusCircle } from "lucide-react";
 import { SubjectCard } from "@/components/SubjectCard";
 import { dayClasses, daySlots, semesterHolidays, sortByRisk, subjectStats } from "@/lib/calc";
 import { fmtLongDate } from "@/lib/dates";
@@ -29,6 +29,44 @@ export default function HomePage() {
     subjectStats(s, activeSemester, data.settings, today),
   );
   const ordered = sortByRisk(stats);
+
+  // onboarding: sem matérias cadastradas
+  if (activeSemester.subjects.length === 0) {
+    return (
+      <div className="flex flex-col gap-6">
+        <header>
+          <h1 className="text-2xl font-bold tracking-tight">
+            falta<span className="text-primary">Calculada</span>
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            {activeSemester.name} · {fmtLongDate(today)}
+          </p>
+        </header>
+
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-soft bg-surface p-8 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
+            <GraduationCap className="h-7 w-7 text-primary" aria-hidden />
+          </span>
+          <div>
+            <p className="font-semibold">Bem-vindo(a)! Comece cadastrando suas matérias</p>
+            <p className="mt-1 text-sm text-muted">
+              Adicione a carga horária e os horários de cada uma para o app
+              calcular suas faltas disponíveis.
+            </p>
+          </div>
+          {!readOnly && (
+            <Link
+              href="/materias"
+              className="mt-1 flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-soft hover:text-black"
+            >
+              <PlusCircle className="h-4 w-4" aria-hidden />
+              Cadastrar matéria
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const todaySubjects = activeSemester.subjects
     .map((subject) => {
@@ -87,12 +125,12 @@ export default function HomePage() {
         </div>
 
         {holidays.has(today) ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-surface p-4 text-sm text-muted">
+          <div className="flex items-center gap-3 rounded-2xl border border-soft bg-surface p-4 text-sm text-muted">
             <CalendarCheck className="h-5 w-5 text-success" aria-hidden />
             Hoje é {holidays.get(today)} — sem aulas.
           </div>
         ) : todaySubjects.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/15 p-4 text-center text-sm text-muted">
+          <div className="rounded-2xl border border-dashed border-soft p-4 text-center text-sm text-muted">
             Nenhuma aula hoje. Descanso merecido.
           </div>
         ) : (
@@ -103,7 +141,7 @@ export default function HomePage() {
                   href={readOnly ? "#" : `/registrar?data=${today}`}
                   aria-disabled={readOnly}
                   onClick={(e) => readOnly && e.preventDefault()}
-                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-surface p-4 transition-colors hover:border-primary/40"
+                  className="flex items-center justify-between rounded-2xl border border-soft bg-surface p-4 transition-colors hover:border-primary/40"
                 >
                   <div className="flex items-center gap-3">
                     <span

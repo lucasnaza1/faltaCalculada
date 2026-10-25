@@ -1,11 +1,12 @@
 "use client";
 
-/** Conta: vínculo do casal (gerar/aceitar código) + logout. */
+/** Configurações: aparência (tema), vínculo do casal e logout. */
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Heart, Loader2, LogOut } from "lucide-react";
+import { Check, Copy, Heart, Loader2, LogOut, Moon, Sun } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { useSync } from "@/lib/sync";
+import { useTheme } from "@/lib/theme";
 
 function randomCode(): string {
   // sem caracteres ambíguos (0/O, 1/I/L)
@@ -17,9 +18,10 @@ function randomCode(): string {
   return code;
 }
 
-export default function ContaPage() {
+export default function ConfiguracoesPage() {
   const supabase = getSupabase();
   const { session, partner, refreshPartner, signOut } = useSync();
+  const { theme, toggle } = useTheme();
 
   const [invite, setInvite] = useState<string | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
@@ -94,13 +96,50 @@ export default function ContaPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Conta &amp; sync</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
         <p className="mt-1 text-sm text-muted">
           {session.user.email}
           {partner && ` · conectado com ${partner.displayName}`}
         </p>
       </header>
 
+      {/* ------------------------------------------------------- aparência */}
+      <section
+        aria-labelledby="aparencia"
+        className="flex flex-col gap-3 rounded-2xl border border-soft bg-surface p-4"
+      >
+        <h2 id="aparencia" className="font-semibold">
+          Aparência
+        </h2>
+        <p className="text-sm text-muted">Escolha entre modo escuro e claro.</p>
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Tema">
+          {(
+            [
+              { value: "dark", label: "Escuro", icon: Moon },
+              { value: "light", label: "Claro", icon: Sun },
+            ] as const
+          ).map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                if (theme !== value) toggle();
+              }}
+              aria-pressed={theme === value}
+              className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-colors ${
+                theme === value
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-soft text-muted hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-4 w-4" aria-hidden />
+              {label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* ------------------------------------------------- vínculo do casal */}
       {partner ? (
         <div className="flex items-start gap-3 rounded-2xl border border-success/30 bg-success/10 p-4 text-sm">
           <Heart className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden />
@@ -113,7 +152,7 @@ export default function ContaPage() {
         <>
           <section
             aria-labelledby="gerar-codigo"
-            className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-surface p-4"
+            className="flex flex-col gap-3 rounded-2xl border border-soft bg-surface p-4"
           >
             <h2 id="gerar-codigo" className="font-semibold">
               Convidar parceiro(a)
@@ -134,7 +173,7 @@ export default function ContaPage() {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}
-                  className="flex items-center gap-1.5 rounded-lg border border-white/10 p-2 text-sm text-muted transition-colors hover:text-foreground"
+                  className="flex items-center gap-1.5 rounded-lg border border-soft p-2 text-sm text-muted transition-colors hover:text-foreground"
                   aria-label="Copiar código"
                 >
                   {copied ? (
@@ -162,7 +201,7 @@ export default function ContaPage() {
 
           <section
             aria-labelledby="usar-codigo"
-            className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-surface p-4"
+            className="flex flex-col gap-3 rounded-2xl border border-soft bg-surface p-4"
           >
             <h2 id="usar-codigo" className="font-semibold">
               Tem um código?
@@ -181,7 +220,7 @@ export default function ContaPage() {
                   placeholder="ABC123"
                   maxLength={6}
                   aria-label="Código do convite"
-                  className="w-32 rounded-xl border border-white/10 bg-surface-raised px-3 py-2.5 text-center font-mono text-lg tracking-widest"
+                  className="w-32 rounded-xl border border-soft bg-surface-raised px-3 py-2.5 text-center font-mono text-lg tracking-widest"
                 />
                 <button
                   type="submit"
@@ -205,7 +244,7 @@ export default function ContaPage() {
       <button
         type="button"
         onClick={() => void signOut()}
-        className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-muted transition-colors hover:border-danger/40 hover:text-danger"
+        className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-soft py-2.5 text-sm font-medium text-muted transition-colors hover:border-danger/40 hover:text-danger"
       >
         <LogOut className="h-4 w-4" aria-hidden /> Sair da conta
       </button>

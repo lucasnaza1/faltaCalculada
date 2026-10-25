@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -69,7 +69,7 @@ export default function RegistrarPage() {
             type="button"
             onClick={() => setDate(addDaysKey(date, -1))}
             aria-label="Dia anterior"
-            className="rounded-xl border border-white/10 bg-surface p-2.5 text-muted transition-colors hover:text-foreground"
+            className="rounded-xl border border-soft bg-surface p-2.5 text-muted transition-colors hover:text-foreground"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden />
           </button>
@@ -80,7 +80,7 @@ export default function RegistrarPage() {
             type="button"
             onClick={() => setDate(addDaysKey(date, 1))}
             aria-label="Próximo dia"
-            className="rounded-xl border border-white/10 bg-surface p-2.5 text-muted transition-colors hover:text-foreground"
+            className="rounded-xl border border-soft bg-surface p-2.5 text-muted transition-colors hover:text-foreground"
           >
             <ChevronRight className="h-5 w-5" aria-hidden />
           </button>
@@ -91,7 +91,7 @@ export default function RegistrarPage() {
             type="date"
             value={date}
             onChange={(e) => e.target.value && setDate(e.target.value)}
-            className="rounded-xl border border-white/10 bg-surface-raised px-3 py-1.5 text-sm text-foreground"
+            className="rounded-xl border border-soft bg-surface-raised px-3 py-1.5 text-sm text-foreground"
           />
         </label>
       </div>
@@ -103,11 +103,11 @@ export default function RegistrarPage() {
       )}
 
       {dayInfo.holiday ? (
-        <div className="rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-muted">
+        <div className="rounded-2xl border border-dashed border-soft p-6 text-center text-sm text-muted">
           {dayInfo.holiday} — sem aulas neste dia.
         </div>
       ) : dayInfo.entries.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-muted">
+        <div className="rounded-2xl border border-dashed border-soft p-6 text-center text-sm text-muted">
           Nenhuma aula prevista neste dia.
         </div>
       ) : (
@@ -118,7 +118,7 @@ export default function RegistrarPage() {
             return (
               <li
                 key={subject.id}
-                className="rounded-2xl border border-white/10 bg-surface p-4"
+                className="rounded-2xl border border-soft bg-surface p-4"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -162,7 +162,7 @@ export default function RegistrarPage() {
                         className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
                           marked
                             ? "border-primary bg-primary/15 text-primary"
-                            : "border-white/10 bg-surface-raised text-foreground hover:border-primary/40"
+                            : "border-soft bg-surface-raised text-foreground hover:border-primary/40"
                         }`}
                       >
                         {marked && <Check className="h-4 w-4" aria-hidden />}

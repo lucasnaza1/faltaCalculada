@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -59,7 +59,6 @@ export default function CalendarioPage() {
   const cursor = cursorOverride ?? defaultCursor;
   const [selected, setSelected] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
   const [form, setForm] = useState(EMPTY_FORM);
 
   const monthDays = useMemo(() => {
@@ -92,11 +91,17 @@ export default function CalendarioPage() {
     return map;
   }, [activeSemester]);
 
-  /** faltas do dia: matéria + ausência (para listar e marcar no calendário) */
+  /** faltas por dia — para listar no detalhe e marcar a célula */
   const absencesByDate = useMemo(() => {
     const map = new Map<
       string,
-      Array<{ subjectId: string; subjectName: string; absenceId: string; classesCount: number; justified: boolean }>
+      Array<{
+        subjectId: string;
+        subjectName: string;
+        absenceId: string;
+        classesCount: number;
+        justified: boolean;
+      }>
     >();
     for (const subject of activeSemester?.subjects ?? []) {
       for (const abs of subject.absences) {
@@ -139,19 +144,24 @@ export default function CalendarioPage() {
   function submitForm(e: React.FormEvent) {
     e.preventDefault();
     if (!selected) return;
+    const count =
+      form.classesCount.trim() === "" ? undefined : Number(form.classesCount);
+    if (count !== undefined && (Number.isNaN(count) || count < 0)) return;
     if (form.type === "FALTA") {
       if (!form.subjectId) return;
-      const count =
-        form.classesCount.trim() === ""
-          ? undefined
-          : Number(form.classesCount);
-      if (count !== undefined && (Number.isNaN(count) || count < 1)) return;
-      addAbsence(form.subjectId, selected, count ?? 1, false, form.note.trim() || undefined);
+      addAbsence(
+        form.subjectId,
+        selected,
+        count ?? 1,
+        false,
+        form.note.trim() || undefined,
+      );
     } else {
       addEvent({
         type: form.type,
         date: selected,
         subjectId: form.subjectId || null,
+        classesCount: count,
         note: form.note.trim() || undefined,
       });
     }
@@ -172,7 +182,7 @@ export default function CalendarioPage() {
           type="button"
           onClick={prevMonth}
           aria-label="Mês anterior"
-          className="rounded-xl border border-white/10 bg-surface p-2.5 text-muted hover:text-foreground"
+          className="rounded-xl border border-soft bg-surface p-2.5 text-muted hover:text-foreground"
         >
           <ChevronLeft className="h-5 w-5" aria-hidden />
         </button>
@@ -183,7 +193,7 @@ export default function CalendarioPage() {
           type="button"
           onClick={nextMonth}
           aria-label="Próximo mês"
-          className="rounded-xl border border-white/10 bg-surface p-2.5 text-muted hover:text-foreground"
+          className="rounded-xl border border-soft bg-surface p-2.5 text-muted hover:text-foreground"
         >
           <ChevronRight className="h-5 w-5" aria-hidden />
         </button>
@@ -225,9 +235,9 @@ export default function CalendarioPage() {
                 isSelected
                   ? "bg-primary text-white"
                   : hasAbsences
-                    ? "bg-danger/20 text-danger"
+                    ? "bg-danger/15 text-danger"
                     : isHoliday
-                      ? "bg-danger/15 text-danger"
+                      ? "bg-info/15 text-info"
                       : hasEvents
                         ? "bg-warning/15 text-warning"
                         : inSemester
@@ -247,13 +257,13 @@ export default function CalendarioPage() {
 
       <div className="flex flex-wrap gap-3 text-xs text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-danger/60" aria-hidden /> Feriado
+          <span className="h-2.5 w-2.5 rounded-sm bg-danger/70" aria-hidden /> Falta
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-danger" aria-hidden /> Falta
+          <span className="h-2.5 w-2.5 rounded-sm bg-info/70" aria-hidden /> Feriado
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-warning/60" aria-hidden /> Alteração
+          <span className="h-2.5 w-2.5 rounded-sm bg-warning/70" aria-hidden /> Alteração
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm bg-primary" aria-hidden /> Hoje
@@ -263,7 +273,7 @@ export default function CalendarioPage() {
       {selected && (
         <section
           aria-label={`Detalhes do dia ${selected}`}
-          className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-surface p-4"
+          className="flex flex-col gap-3 rounded-2xl border border-soft bg-surface p-4"
         >
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold capitalize-first">
@@ -287,7 +297,7 @@ export default function CalendarioPage() {
           </div>
 
           {selectedHoliday && (
-            <p className="text-sm text-danger">{selectedHoliday} (feriado nacional)</p>
+            <p className="text-sm text-info">{selectedHoliday} (feriado nacional)</p>
           )}
 
           {selectedAbsences.length > 0 && (
@@ -332,6 +342,7 @@ export default function CalendarioPage() {
                   {EVENT_LABELS[ev.type]}
                   {ev.subjectId &&
                     ` · ${activeSemester.subjects.find((s) => s.id === ev.subjectId)?.name ?? ""}`}
+                  {ev.classesCount ? ` (${ev.classesCount}h)` : ""}
                   {ev.note ? ` — ${ev.note}` : ""}
                 </span>
                 <button
@@ -362,7 +373,7 @@ export default function CalendarioPage() {
               onChange={(e) =>
                 setForm((f) => ({ ...f, type: e.target.value as FormType }))
               }
-              className="rounded-xl border border-white/10 bg-surface-raised px-3 py-2.5"
+              className="rounded-xl border border-soft bg-surface-raised px-3 py-2.5"
             >
               {TYPE_OPTIONS.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -378,7 +389,7 @@ export default function CalendarioPage() {
               value={form.subjectId}
               onChange={(e) => setForm((f) => ({ ...f, subjectId: e.target.value }))}
               required={form.type === "FALTA"}
-              className="rounded-xl border border-white/10 bg-surface-raised px-3 py-2.5"
+              className="rounded-xl border border-soft bg-surface-raised px-3 py-2.5"
             >
               {form.type === "FALTA" ? (
                 <option value="" disabled>
@@ -395,7 +406,7 @@ export default function CalendarioPage() {
             </select>
           </label>
 
-          {form.type === "FALTA" && (
+          {form.type === "FALTA" ? (
             <label className="flex flex-col gap-1.5 text-sm">
               Horários (opcional — vazio = 1)
               <input
@@ -407,10 +418,29 @@ export default function CalendarioPage() {
                   setForm((f) => ({ ...f, classesCount: e.target.value }))
                 }
                 placeholder="Ex.: 2"
-                className="rounded-xl border border-white/10 bg-surface-raised px-3 py-2.5 placeholder:text-muted/60"
+                className="rounded-xl border border-soft bg-surface-raised px-3 py-2.5 placeholder:text-muted/60"
               />
             </label>
-          )}
+          ) : form.type === "SCHEDULE_CHANGE" || form.type === "EXTRA_CLASS" || form.type === "REPLACEMENT" ? (
+            <label className="flex flex-col gap-1.5 text-sm">
+              Horários (opcional)
+              <input
+                type="number"
+                min={0}
+                inputMode="numeric"
+                value={form.classesCount}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, classesCount: e.target.value }))
+                }
+                placeholder={
+                  form.type === "SCHEDULE_CHANGE"
+                    ? "Aulas no novo horário (vazio = mantém)"
+                    : "Quantidade de horários (vazio = 1)"
+                }
+                className="rounded-xl border border-soft bg-surface-raised px-3 py-2.5 placeholder:text-muted/60"
+              />
+            </label>
+          ) : null}
 
           <label className="flex flex-col gap-1.5 text-sm">
             Observação (opcional)
@@ -423,7 +453,7 @@ export default function CalendarioPage() {
                   ? "Ex.: atestado, médico…"
                   : "Ex.: ponte, semana acadêmica…"
               }
-              className="rounded-xl border border-white/10 bg-surface-raised px-3 py-2.5 placeholder:text-muted/60"
+              className="rounded-xl border border-soft bg-surface-raised px-3 py-2.5 placeholder:text-muted/60"
             />
           </label>
 

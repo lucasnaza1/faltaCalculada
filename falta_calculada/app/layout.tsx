@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+import { ThemeProvider } from "@/lib/theme";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,13 +29,21 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+/** aplica o tema salvo antes da hidratação — evita flash de tema errado */
+const THEME_INIT = `try{var t=localStorage.getItem("falta-calculada:theme");if(t==="light")document.documentElement.dataset.theme="light"}catch(e){}`;
+
 export default function RootLayout({
   children,
 }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className={`${inter.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        <AppShell>{children}</AppShell>
+        <ThemeProvider>
+          <AppShell>{children}</AppShell>
+        </ThemeProvider>
       </body>
     </html>
   );

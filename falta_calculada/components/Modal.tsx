@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { X } from "lucide-react";
 import { useEffect } from "react";
@@ -31,7 +31,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
       aria-label={title}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl border border-white/10 bg-surface p-5 pb-safe shadow-2xl"
+        className="w-full max-w-md rounded-t-2xl border border-soft bg-surface p-5 pb-safe shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">

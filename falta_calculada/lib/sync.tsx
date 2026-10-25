@@ -17,10 +17,17 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { AppData } from "./types";
-import { getSnapshot, replaceData, subscribeMutations } from "./store";
+import {
+  getSnapshot,
+  getServerSnapshot,
+  replaceData,
+  subscribe,
+  subscribeMutations,
+} from "./store";
 import { getSupabase } from "./supabase";
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "error";
@@ -36,6 +43,8 @@ interface SyncState {
   status: SyncStatus;
   partner: PartnerInfo | null;
   partnerData: AppData | null;
+  /** documento local do usuário logado (para checagens de UI) */
+  sessionData: AppData | null;
   /** true quando a UI está exibindo os dados do parceiro (somente leitura) */
   viewingPartner: boolean;
   setViewingPartner: (v: boolean) => void;
@@ -58,6 +67,8 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<SyncStatus>("idle");
   const [partner, setPartner] = useState<PartnerInfo | null>(null);
   const [partnerData, setPartnerData] = useState<AppData | null>(null);
+  /** documento local (do usuário logado) — espelha o store para a UI */
+  const localData = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [viewingPartner, setViewingPartnerState] = useState(false);
 
   const sessionRef = useRef<Session | null>(null);
@@ -125,7 +136,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      /** peso do documento: nº de registros reais (faltas + eventos + matérias) */
+      /** peso do documento: nº de registros reais (matérias + faltas + eventos) */
       const docWeight = (d: AppData | null | undefined): number => {
         if (!d?.semesters?.length) return -1;
         let w = 0;
@@ -255,6 +266,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       status,
       partner,
       partnerData,
+      sessionData: localData,
       viewingPartner: viewingPartner && !!partnerData,
       setViewingPartner,
       readOnly: viewingPartner && !!partnerData,
@@ -267,6 +279,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       status,
       partner,
       partnerData,
+      localData,
       viewingPartner,
       setViewingPartner,
       loadPartner,

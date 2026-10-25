@@ -1,15 +1,15 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, GraduationCap, Home, PlusCircle, User } from "lucide-react";
+import { CalendarDays, GraduationCap, Home, PlusCircle, Settings } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Início", icon: Home },
   { href: "/registrar", label: "Registrar", icon: PlusCircle },
   { href: "/calendario", label: "Calendário", icon: CalendarDays },
   { href: "/materias", label: "Matérias", icon: GraduationCap },
-  { href: "/conta", label: "Conta", icon: User },
+  { href: "/configuracoes", label: "Ajustes", icon: Settings },
 ] as const;
 
 export function BottomNav() {
@@ -18,7 +18,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0d0d0f]/95 backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-soft bg-[var(--nav-bg)] backdrop-blur"
     >
       <ul className="mx-auto flex max-w-md items-stretch justify-between px-2 pb-safe pt-1">
         {NAV.map(({ href, label, icon: Icon }) => {

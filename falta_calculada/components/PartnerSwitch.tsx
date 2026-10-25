@@ -1,22 +1,29 @@
-"use client";
+﻿"use client";
 
-/** Toggle "Eu | Nome dela" + status de sync. Fica fixo no topo. */
+/** Toggle "Eu | Nome dela" + status de sync. Fica fixo no topo.
+ * Só aparece quando ambos os lados têm matérias cadastradas. */
 
 import { CloudOff, Eye, RefreshCw } from "lucide-react";
 import { useSync } from "@/lib/sync";
 
+function hasSubjects(d: { semesters?: Array<{ subjects: Array<unknown> }> } | null): boolean {
+  return !!d?.semesters?.some((s) => s.subjects.length > 0);
+}
+
 export function PartnerSwitch() {
-  const { partner, partnerData, viewingPartner, setViewingPartner, status, refreshPartner } =
+  const { partner, partnerData, viewingPartner, setViewingPartner, status, refreshPartner, sessionData } =
     useSync();
 
   if (!partner || !partnerData) return null;
+  // sem matérias de um dos lados: nada para alternar
+  if (!hasSubjects(partnerData) || !hasSubjects(sessionData)) return null;
 
   return (
     <div className="mb-4 flex items-center justify-between gap-2">
       <div
         role="group"
         aria-label="Selecionar dados exibidos"
-        className="flex rounded-full border border-white/10 bg-surface p-1"
+        className="flex rounded-full border border-soft bg-surface p-1"
       >
         <button
           type="button"
